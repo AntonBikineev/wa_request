@@ -34,16 +34,7 @@ struct sender
 
     static const std::string address_prefix = "http://www.wolframalpha.com/input/?i="s;
 
-    // replace request symbols for symbol_map
-    for (const auto& k: symbol_map)
-    {
-      size_t place = request.find(k.first);
-      while (place != std::string::npos)
-      {
-        request.replace(place, 1u, k.second);
-        place = request.find(k.first);
-      }
-    }
+    replace_symbols_for_url(request);
 
     const std::string address = address_prefix + request;
     urdl::istream is(address);
@@ -58,7 +49,22 @@ struct sender
     return handler(content);
   }
 
+private:
   static const std::map<char, std::string> symbol_map;
+
+  // replace request symbols for symbol_map
+  void replace_symbols_for_url(std::string& request) const
+  {
+    for (const auto& k: symbol_map)
+    {
+      size_t place = request.find(k.first);
+      while (place != std::string::npos)
+      {
+        request.replace(place, 1u, k.second);
+        place = request.find(k.first);
+      }
+    }
+  }
 };
 
 const std::map<char, std::string> sender::symbol_map =
