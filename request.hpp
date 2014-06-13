@@ -37,9 +37,12 @@ struct sender
     // replace request symbols for symbol_map
     for (const auto& k: symbol_map)
     {
-      const auto place = request.find(k.first);
-      if (place != std::string::npos)
+      size_t place = request.find(k.first);
+      while (place != std::string::npos)
+      {
         request.replace(place, 1u, k.second);
+        place = request.find(k.first);
+      }
     }
 
     const std::string address = address_prefix + request;
@@ -63,7 +66,7 @@ const std::map<char, std::string> sender::symbol_map =
     {',', "%2C"},
     {'+', "%2B"},
     {'/', "%2F"},
-    {' ', "+"}
+    {' ', ""}
   };
 
 // type erased async_sender
@@ -95,7 +98,7 @@ private:
 
 public:
   template <class Handler>
-  async_sender(const std::string& request, Handler handler, const std::launch policy = std::launch::async):
+  async_sender(const std::string& request, Handler handler, const std::launch policy):
     held{std::make_unique<holder<typename std::result_of<Handler (std::string)>::type > >(request, handler, policy)}
   {
   }
@@ -147,11 +150,18 @@ struct get_result_handler
 class request
 {
 public:
-  explicit request(const std::string& str)
+  explicit request(const std::string& str, const std::launch policy = std::launch::async):
+    sender(str, detail::get_result_handler{}, policy)
   {
   }
 
+  std::string get() // non const
+  {
+    return sender.get<std::string>();
+  }
+
 private:
+  detail::async_sender sender;
 };
 
 } // namespace wa
