@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <string>
+#include <sstream>
 #include <map>
 #include <future>
 
@@ -107,6 +108,38 @@ public:
 
 private:
   std::unique_ptr<base_holder> held;
+};
+
+struct get_result_handler
+{
+  std::string operator()(const std::string& str) const
+  {
+    using namespace std::string_literals;
+
+    static const std::string prefix1 = "result"s;
+    static const std::string prefix2 = "/input/?i="s;
+    static const std::string prefix3 = "&lk"s;
+
+    std::istringstream ss(str);
+    std::string line;
+    while (std::getline(ss, line))
+    {
+      const size_t first_found_pos = line.find(prefix1);
+      if (first_found_pos != std::string::npos)
+      {
+        const size_t second_found_pos = line.find(prefix2, first_found_pos);
+        if (second_found_pos != std::string::npos)
+        {
+          const size_t third_found_pos = line.find(prefix3, second_found_pos);
+
+          const size_t result_pos = second_found_pos + prefix2.size();
+          return line.substr(result_pos, third_found_pos - result_pos);
+        }
+      }
+    }
+
+    return std::string{};
+  }
 };
 
 } // namespace detail
